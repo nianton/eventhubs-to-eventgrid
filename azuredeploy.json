@@ -52,6 +52,7 @@
         "environment": "dev",
         "suffix": "[substring(uniqueString(subscription().subscriptionId), 0, 6)]",
         "storageAccountName": "[concat('b2caudit', variables('suffix'))]",
+        "storageAccountConnectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]",
         "storageAccountid": "[concat(resourceGroup().id,'/providers/Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
         "storageContainerName": "auditlogs",
         "storageDeadletterContainerName": "auditdeadletters",
@@ -59,6 +60,7 @@
         "functionAppName": "[concat('b2caudit', '-eventhandler-', variables('suffix'), '-func')]",
         "applicationInsightsName": "[concat('b2caudit', '-eventhandler-', variables('suffix'), '-appins')]",
         "hostingPlanName": "[concat('b2caudit', '-eventhandler-', variables('suffix'), '-asp')]",
+        "eventHubsAuditName": "auditevents",
         "eventHubsIsBasic": "[equals(parameters('eventHubsSku'), 'Basic')]",
         "eventHubsAutoInflateEnabled": "[if(variables('eventHubsIsBasic'), bool('false'), bool(parameters('eventHubsAutoInflateEnabled')))]",
         "eventHubsMaxThroughputUnits": "[if(variables('eventHubsIsBasic'), 0, int(parameters('eventHubsMaxThroughputUnits')))]",
@@ -102,6 +104,20 @@
             }
         },
         {
+            "type": "Microsoft.EventHub/namespaces/eventhubs",
+            "apiVersion": "2017-04-01",
+            "name": "[concat(variables('eventHubsNamespaceName'), '/', variables('eventHubsAuditName'))]",
+            "location": "West Europe",
+            "dependsOn": [
+                "[resourceId('Microsoft.EventHub/namespaces', variables('eventHubsNamespaceName'))]"
+            ],
+            "properties": {
+                "messageRetentionInDays": 1,
+                "partitionCount": 4,
+                "status": "Active"
+            }
+        },
+        {
             "name": "[parameters('eventGridSubscriptionName')]",
             "type": "Microsoft.EventGrid/eventSubscriptions",
             "apiVersion": "2019-06-01",
@@ -123,9 +139,11 @@
                     "includedEventTypes": [
                         "Microsoft.EventHub.CaptureFileCreated"
                     ],
-                    "advancedFilters": []
+                    "advancedFilters": [
+                    ]
                 },
-                "labels": [],
+                "labels": [
+                ],
                 "eventDeliverySchema": "EventGridSchema",
                 "deadLetterDestination": {
                     "endpointType": "StorageBlob",
@@ -220,15 +238,15 @@
                     "appSettings": [
                         {
                             "name": "AzureWebJobsDashboard",
-                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
+                            "value": "[variables('storageAccountConnectionString')]"
                         },
                         {
                             "name": "AzureWebJobsStorage",
-                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
+                            "value": "[variables('storageAccountConnectionString')]"
                         },
                         {
                             "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
-                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
+                            "value": "[variables('storageAccountConnectionString')]"
                         },
                         {
                             "name": "WEBSITE_CONTENTSHARE",
@@ -248,7 +266,7 @@
                         },
                         {
                             "name": "MainStorageConnectionString",
-                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
+                            "value": "[variables('storageAccountConnectionString')]"
                         },
                         {
                             "name": "EventHubConnectionString",
