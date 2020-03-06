@@ -52,7 +52,6 @@
         "environment": "dev",
         "suffix": "[substring(uniqueString(subscription().subscriptionId), 0, 6)]",
         "storageAccountName": "[concat('b2caudit', variables('suffix'))]",
-        "storageAccountConnectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]",
         "storageAccountid": "[concat(resourceGroup().id,'/providers/Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
         "storageContainerName": "auditlogs",
         "storageDeadletterContainerName": "auditdeadletters",
@@ -65,7 +64,7 @@
         "eventHubsAutoInflateEnabled": "[if(variables('eventHubsIsBasic'), bool('false'), bool(parameters('eventHubsAutoInflateEnabled')))]",
         "eventHubsMaxThroughputUnits": "[if(variables('eventHubsIsBasic'), 0, int(parameters('eventHubsMaxThroughputUnits')))]",
         "eventHubsAuthRuleName": "AuditEventAuthRule",
-        "eventHubsAuthRuleResourceId": "[resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', variables('eventHubsNamespaceName'), variables('defaultSASKeyName'))]",
+        "eventHubsAuthRuleResourceId": "[resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', variables('eventHubsNamespaceName'), variables('eventHubsAuthRuleName'))]",
         "sourceCodeRepositoryUrl": "https://github.com/nianton/eventhubs-to-eventgrid.git",
         "sourceCodeBranch": "master",
         "sourceCodeManualIntegration": true
@@ -85,7 +84,23 @@
                 "isAutoInflateEnabled": "[variables('eventHubsAutoInflateEnabled')]",
                 "maximumThroughputUnits": "[variables('eventHubsMaxThroughputUnits')]",
                 "zoneRedundant": true
-            }
+            },
+            "resources": [
+                {
+                    "type": "Microsoft.EventHub/namespaces/eventhubs",
+                    "apiVersion": "2017-04-01",
+                    "name": "[concat(variables('eventHubsNamespaceName'), '/', variables('eventHubsAuditName'))]",
+                    "location": "[parameters('location')]",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.EventHub/namespaces', variables('eventHubsNamespaceName'))]"
+                    ],
+                    "properties": {
+                        "messageRetentionInDays": 1,
+                        "partitionCount": 4,
+                        "status": "Active"
+                    }
+                }
+            ]
         },
         {
             "type": "Microsoft.EventHub/namespaces/AuthorizationRules",
@@ -101,20 +116,6 @@
                     "Manage",
                     "Send"
                 ]
-            }
-        },
-        {
-            "type": "Microsoft.EventHub/namespaces/eventhubs",
-            "apiVersion": "2017-04-01",
-            "name": "[concat(variables('eventHubsNamespaceName'), '/', variables('eventHubsAuditName'))]",
-            "location": "West Europe",
-            "dependsOn": [
-                "[resourceId('Microsoft.EventHub/namespaces', variables('eventHubsNamespaceName'))]"
-            ],
-            "properties": {
-                "messageRetentionInDays": 1,
-                "partitionCount": 4,
-                "status": "Active"
             }
         },
         {
@@ -208,19 +209,6 @@
             }
         },
         {
-            "apiVersion": "2018-11-01",
-            "name": "web",
-            "type": "Microsoft.Web/sites/sourcecontrols",
-            "dependsOn": [
-                "[resourceId('Microsoft.Web/sites/', variables('functionAppName'))]"
-            ],
-            "properties": {
-                "RepoUrl": "[variables('sourceCodeRepositoryUrl')]",
-                "branch": "[variables('sourceCodeBranch')]",
-                "IsManualIntegration": "[variables('sourceCodeManualIntegration')]"
-            }
-        },
-        {
             "apiVersion": "2015-08-01",
             "type": "Microsoft.Web/sites",
             "name": "[variables('functionAppName')]",
@@ -231,6 +219,21 @@
                 "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
                 "[resourceId('microsoft.insights/components', variables('applicationInsightsName'))]",
                 "[resourceId('Microsoft.EventHub/namespaces', variables('eventHubsNamespaceName'))]"
+            ],
+            "resources": [
+                {
+                    "apiVersion": "2018-11-01",
+                    "name": "[concat(variables('functionAppName'), 'web')]",
+                    "type": "Microsoft.Web/sites/sourcecontrols",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Web/sites/', variables('functionAppName'))]"
+                    ],
+                    "properties": {
+                        "RepoUrl": "[variables('sourceCodeRepositoryUrl')]",
+                        "branch": "[variables('sourceCodeBranch')]",
+                        "IsManualIntegration": "[variables('sourceCodeManualIntegration')]"
+                    }
+                }
             ],
             "properties": {
                 "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('hostingPlanName'))]",
