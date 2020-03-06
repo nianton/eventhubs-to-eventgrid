@@ -11,7 +11,7 @@ namespace EventHandler.Functions
 {
     public static class EventHubTrigger
     {
-        //[FunctionName("EventHubTrigger")]
+        [FunctionName("EventHubTrigger")]
         public static async Task Run([EventHubTrigger("%EventHubName%", Connection = "EventHubConnection")] EventData[] events, ILogger log)
         {
             var exceptions = new List<Exception>();

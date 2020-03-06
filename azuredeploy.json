@@ -64,9 +64,9 @@
         "eventHubsMaxThroughputUnits": "[if(variables('eventHubsIsBasic'), 0, int(parameters('eventHubsMaxThroughputUnits')))]",
         "eventHubsAuthRuleName": "AuditEventAuthRule",
         "eventHubsAuthRuleResourceId": "[resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', variables('eventHubsNamespaceName'), variables('defaultSASKeyName'))]",
-        "sourceCodeRepositoryUrl":"",
-        "sourceCodeBranch": "",
-        "sourceCodeManualIntegration":""
+        "sourceCodeRepositoryUrl": "https://github.com/nianton/eventhubs-to-eventgrid.git",
+        "sourceCodeBranch": "master",
+        "sourceCodeManualIntegration": true
     },
     "resources": [
         {
@@ -102,26 +102,39 @@
             }
         },
         {
-            "name": "[concat(parameters('eventGridTopicName'), '/Microsoft.EventGrid/', parameters('eventGridSubscriptionName'))]",
-            "type": "Microsoft.EventGrid/topics/providers/eventSubscriptions",
-            "location": "[parameters('location')]",
-            "apiVersion": "2018-01-01",
+            "name": "[parameters('eventGridSubscriptionName')]",
+            "type": "Microsoft.EventGrid/eventSubscriptions",
+            "apiVersion": "2019-06-01",
+            "dependsOn": [
+                "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]",
+                "[resourceId('Microsoft.EventHub/namespaces', variables('eventHubsNamespaceName'))]"
+            ],
             "properties": {
+                "topic": "[resourceId('Microsoft.Eventhub/Namespaces', variables('eventHubsNamespaceName'))]",
                 "destination": {
-                    "endpointType": "WebHook",
+                    "endpointType": "AzureFunction",
                     "properties": {
-                        "endpointUrl": "[parameters('eventGridSubscriptionUrl')]"
+                        "resourceId": "[resourceId('Microsoft.Web/sites', variables('functionAppName'), '/functions/EventGridTrigger')]",
+                        "maxEventsPerBatch": 20,
+                        "preferredBatchSizeInKilobytes": 128
                     }
                 },
                 "filter": {
                     "includedEventTypes": [
-                        "All"
-                    ]
+                        "Microsoft.EventHub.CaptureFileCreated"
+                    ],
+                    "advancedFilters": []
+                },
+                "labels": [],
+                "eventDeliverySchema": "EventGridSchema",
+                "deadLetterDestination": {
+                    "endpointType": "StorageBlob",
+                    "properties": {
+                        "resourceId": "[variables('storageAccountid')]",
+                        "blobContainerName": "[variables('storageDeadletterContainerName')]"
+                    }
                 }
-            },
-            "dependsOn": [
-                "[resourceId('Microsoft.Web/sites/', variables('functionAppName'))]"
-            ]
+            }
         },
         {
             "name": "[variables('storageAccountName')]",
@@ -177,7 +190,7 @@
             }
         },
         {
-            "apiVersion": "2015-08-01",
+            "apiVersion": "2018-11-01",
             "name": "functionAppSourceControls",
             "type": "sourcecontrols",
             "dependsOn": [
