@@ -36,7 +36,10 @@
             "allowedValues": [
                 "Basic",
                 "Standard"
-            ]
+            ],
+            "metadata": {
+                "description": "If Event Hub will be used a destination for diagnostics, 'Standard' is required."
+            }        
         },
         "eventHubsSkuCapacity": {
             "type": "int",
@@ -72,7 +75,8 @@
         "eventHubsIsBasic": "[equals(parameters('eventHubsSku'), 'Basic')]",
         "eventHubsAutoInflateEnabled": "[if(variables('eventHubsIsBasic'), bool('false'), bool(parameters('eventHubsAutoInflateEnabled')))]",
         "eventHubsMaxThroughputUnits": "[if(variables('eventHubsIsBasic'), 0, int(parameters('eventHubsMaxThroughputUnits')))]",
-        "eventHubsAuthRuleName": "AuditEventAuthRule",
+        "eventHubsRetentionDays": "[if(variables('eventHubsIsBasic'), 1, 7)]",
+        "eventHubsAuthRuleName": "DiagnosticsAuditAuthRule",
         "eventHubsAuthRuleResourceId": "[resourceId('Microsoft.EventHub/namespaces/authorizationRules', variables('eventHubsNamespaceName'), variables('eventHubsAuthRuleName'))]",
         "sourceCodeRepositoryUrl": "https://github.com/nianton/eventhubs-to-eventgrid.git",
         "sourceCodeBranch": "master",
@@ -104,7 +108,7 @@
                         "[resourceId('Microsoft.EventHub/namespaces', variables('eventHubsNamespaceName'))]"
                     ],
                     "properties": {
-                        "messageRetentionInDays": 1,
+                        "messageRetentionInDays": "[variables('eventHubsRetentionDays')]",
                         "partitionCount": 4,
                         "status": "Active"
                     }
@@ -120,7 +124,6 @@
                     "properties": {
                         "rights": [
                             "Listen",
-                            "Manage",
                             "Send"
                         ]
                     }
@@ -249,6 +252,18 @@
                 "siteConfig": {
                     "appSettings": [
                         {
+                            "name": "FUNCTIONS_EXTENSION_VERSION",
+                            "value": "~2"
+                        },
+                        {
+                            "name": "WEBSITE_NODE_DEFAULT_VERSION",
+                            "value": "10.14.1"
+                        },
+                        {
+                            "name": "FUNCTIONS_WORKER_RUNTIME",
+                            "value": "dotnet"
+                        },
+                        {
                             "name": "AzureWebJobsDashboard",
                             "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
                         },
@@ -265,28 +280,16 @@
                             "value": "[toLower(variables('functionAppName'))]"
                         },
                         {
-                            "name": "FUNCTIONS_EXTENSION_VERSION",
-                            "value": "~2"
-                        },
-                        {
-                            "name": "WEBSITE_NODE_DEFAULT_VERSION",
-                            "value": "10.14.1"
-                        },
-                        {
                             "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
                             "value": "[reference(resourceId('microsoft.insights/components/', variables('applicationInsightsName')), '2015-05-01').InstrumentationKey]"
                         },
                         {
-                            "name": "MainStorageConnectionString",
-                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('storageAccountName'), ';AccountKey=', listKeys(variables('storageAccountid'),'2015-05-01-preview').key1)]"
-                        },
-                        {
-                            "name": "EventHubConnectionString",
+                            "name": "EventHubConnection",
                             "value": "[listkeys(variables('eventHubsAuthRuleResourceId'), '2017-04-01').primaryConnectionString]"
                         },
                         {
-                            "name": "FUNCTIONS_WORKER_RUNTIME",
-                            "value": "dotnet"
+                            "name": "EventHubName",
+                            "value": "[variables('eventHubsAuditName')]"
                         }
                     ]
                 }
