@@ -2,6 +2,13 @@
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
+        "projectName": {
+            "type": "string",
+            "defaultValue": "b2caudit",
+            "metadata": {
+                "description": "The project's name, will be used in the naming convention of the resources."
+            }
+        },
         "location": {
             "type": "string",
             "defaultValue": "[resourceGroup().location]",
@@ -48,17 +55,17 @@
         }
     },
     "variables": {
-        "project": "test",
+        "project": "[toLower(parameters('projectName'))]",
         "environment": "dev",
         "suffix": "[substring(uniqueString(subscription().subscriptionId), 0, 6)]",
-        "storageAccountName": "[concat('b2caudit', variables('suffix'))]",
+        "storageAccountName": "[concat(variables('project'), variables('suffix'))]",
         "storageAccountid": "[concat(resourceGroup().id,'/providers/Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]",
         "storageContainerName": "auditlogs",
         "storageDeadletterContainerName": "auditdeadletters",
-        "eventHubsNamespaceName": "b2caudit-ehns",
-        "functionAppName": "[concat('b2caudit', '-eventhandler-', variables('suffix'), '-func')]",
-        "applicationInsightsName": "[concat('b2caudit', '-eventhandler-', variables('suffix'), '-appins')]",
-        "hostingPlanName": "[concat('b2caudit', '-eventhandler-', variables('suffix'), '-asp')]",
+        "eventHubsNamespaceName": "[concat(variables('project'),'-ehns')]",
+        "functionAppName": "[concat(variables('project'), '-eventhandler-', variables('suffix'), '-func')]",
+        "applicationInsightsName": "[concat(variables('project'), '-eventhandler-', variables('suffix'), '-appins')]",
+        "hostingPlanName": "[concat(variables('project'), '-eventhandler-', variables('suffix'), '-asp')]",
         "eventHubsAuditName": "auditevents",
         "eventHubsIsBasic": "[equals(parameters('eventHubsSku'), 'Basic')]",
         "eventHubsAutoInflateEnabled": "[if(variables('eventHubsIsBasic'), bool('false'), bool(parameters('eventHubsAutoInflateEnabled')))]",
