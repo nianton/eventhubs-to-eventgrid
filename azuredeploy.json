@@ -99,25 +99,25 @@
                         "partitionCount": 4,
                         "status": "Active"
                     }
+                },
+                {
+                    "type": "Microsoft.EventHub/namespaces/AuthorizationRules",
+                    "apiVersion": "2017-04-01",
+                    "name": "[concat(variables('eventHubsNamespaceName'), '/', variables('eventHubsAuthRuleName'))]",
+                    "location": "[parameters('location')]",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.EventHub/namespaces', variables('eventHubsNamespaceName'))]"
+                    ],
+                    "properties": {
+                        "rights": [
+                            "Listen",
+                            "Manage",
+                            "Send"
+                        ]
+                    }
                 }
             ]
-        },
-        {
-            "type": "Microsoft.EventHub/namespaces/AuthorizationRules",
-            "apiVersion": "2017-04-01",
-            "name": "[concat(variables('eventHubsNamespaceName'), '/', variables('eventHubsAuthRuleName'))]",
-            "location": "[parameters('location')]",
-            "dependsOn": [
-                "[resourceId('Microsoft.EventHub/namespaces', variables('eventHubsNamespaceName'))]"
-            ],
-            "properties": {
-                "rights": [
-                    "Listen",
-                    "Manage",
-                    "Send"
-                ]
-            }
-        },
+        },        
         {
             "name": "[parameters('eventGridSubscriptionName')]",
             "type": "Microsoft.EventGrid/eventSubscriptions",
@@ -129,9 +129,12 @@
             "properties": {
                 "topic": "[resourceId('Microsoft.Eventhub/Namespaces', variables('eventHubsNamespaceName'))]",
                 "destination": {
-                    "endpointType": "AzureFunction",
+                    "endpointType": "WebHook",
                     "properties": {
-                        "resourceId": "[resourceId('Microsoft.Web/sites', variables('functionAppName'), '/functions/EventGridTrigger')]",
+                        //"resourceId": "[concat(resourceId('Microsoft.Web/sites', variables('functionAppName')), '/functions/EventGridTrigger')]",
+                        "endpointUrl": "[concat(
+                            'https://', variables('functionAppName'), '.azurewebsites.net/runtime/webhooks/eventgrid?functionName=EventGridTrigger&code=', 
+                            listKeys(concat('Microsoft.Web/sites', variables('functionAppName'), '/host/default/'), '2016-08-01').functionKeys.default)]",
                         "maxEventsPerBatch": 20,
                         "preferredBatchSizeInKilobytes": 128
                     }
@@ -223,7 +226,7 @@
             "resources": [
                 {
                     "apiVersion": "2018-11-01",
-                    "name": "[concat(variables('functionAppName'), 'web')]",
+                    "name": "[concat(variables('functionAppName'), '/web')]",
                     "type": "Microsoft.Web/sites/sourcecontrols",
                     "dependsOn": [
                         "[resourceId('Microsoft.Web/sites/', variables('functionAppName'))]"
