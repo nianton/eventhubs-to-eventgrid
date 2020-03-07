@@ -7,9 +7,9 @@ using Microsoft.Extensions.Logging;
 
 namespace EventHandler.Functions
 {
-    public static class EventGridTrigger
+    public static class MyEventGridTrigger
     {
-        [FunctionName("EventGridTrigger")]
+        [FunctionName("MyEventGridTrigger")]
         public static void Run([EventGridTrigger]EventGridEvent eventGridEvent, ILogger log)
         {
             log.LogInformation(eventGridEvent.Data.ToString());

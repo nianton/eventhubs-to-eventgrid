@@ -9,9 +9,9 @@ using Microsoft.Extensions.Logging;
 
 namespace EventHandler.Functions
 {
-    public static class EventHubTrigger
+    public static class MyEventHubTrigger
     {
-        [FunctionName("EventHubTrigger")]
+        [FunctionName("MyEventHubTrigger")]
         public static async Task Run([EventHubTrigger("%EventHubName%", Connection = "EventHubConnection")] EventData[] events, ILogger log)
         {
             var exceptions = new List<Exception>();
