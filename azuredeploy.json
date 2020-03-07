@@ -25,6 +25,7 @@
         },
         "eventGridSubscriptionUrl": {
             "type": "string",
+            "defaultValue": "https://myendpoints.accepts.eventgrid",
             "metadata": {
                 "description": "The webhook URL to send the subscription events to. This URL must be valid and must be prepared to accept the Event Grid webhook URL challenge request. (RequestBin URLs are exempt from this requirement.)"
             }
@@ -63,15 +64,16 @@
         "storageContainerName": "auditlogs",
         "storageDeadletterContainerName": "auditdeadletters",
         "eventHubsNamespaceName": "[concat(variables('project'),'-ehns')]",
-        "functionAppName": "[concat(variables('project'), '-eventhandler-', variables('suffix'), '-func')]",
-        "applicationInsightsName": "[concat(variables('project'), '-eventhandler-', variables('suffix'), '-appins')]",
-        "hostingPlanName": "[concat(variables('project'), '-eventhandler-', variables('suffix'), '-asp')]",
+        "functionAppPrefix":"[concat(variables('project'), '-eventhandler-', variables('suffix'))]",
+        "functionAppName": "[concat(variables('functionAppPrefix'), '-func')]",
+        "applicationInsightsName": "[concat(variables('functionAppPrefix'), '-appins')]",
+        "hostingPlanName": "[concat(variables('functionAppPrefix'), '-asp')]",
         "eventHubsAuditName": "auditevents",
         "eventHubsIsBasic": "[equals(parameters('eventHubsSku'), 'Basic')]",
         "eventHubsAutoInflateEnabled": "[if(variables('eventHubsIsBasic'), bool('false'), bool(parameters('eventHubsAutoInflateEnabled')))]",
         "eventHubsMaxThroughputUnits": "[if(variables('eventHubsIsBasic'), 0, int(parameters('eventHubsMaxThroughputUnits')))]",
         "eventHubsAuthRuleName": "AuditEventAuthRule",
-        "eventHubsAuthRuleResourceId": "[resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', variables('eventHubsNamespaceName'), variables('eventHubsAuthRuleName'))]",
+        "eventHubsAuthRuleResourceId": "[resourceId('Microsoft.EventHub/namespaces/authorizationRules', variables('eventHubsNamespaceName'), variables('eventHubsAuthRuleName'))]",
         "sourceCodeRepositoryUrl": "https://github.com/nianton/eventhubs-to-eventgrid.git",
         "sourceCodeBranch": "master",
         "sourceCodeManualIntegration": true
@@ -138,7 +140,7 @@
                 "destination": {
                     "endpointType": "WebHook",
                     "properties": {
-                        "endpointUrl": "[concat('https://', variables('functionAppName'), '.azurewebsites.net/runtime/webhooks/eventgrid?functionName=EventGridTrigger&code=', listKeys(concat('Microsoft.Web/sites', variables('functionAppName'), '/host/default/'), '2016-08-01').functionKeys.default)]",
+                        "endpointUrl": "[concat('https://', variables('functionAppName'), '.azurewebsites.net/runtime/webhooks/eventgrid?functionName=EventGridTrigger&code=', listKeys(concat('Microsoft.Web/sites/', variables('functionAppName'), '/host/default/'), '2016-08-01').functionKeys.default)]",
                         "maxEventsPerBatch": 20,
                         "preferredBatchSizeInKilobytes": 128
                     }
