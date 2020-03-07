@@ -131,7 +131,6 @@
                 "destination": {
                     "endpointType": "WebHook",
                     "properties": {
-                        //"resourceId": "[concat(resourceId('Microsoft.Web/sites', variables('functionAppName')), '/functions/EventGridTrigger')]",
                         "endpointUrl": "[concat(
                             'https://', variables('functionAppName'), '.azurewebsites.net/runtime/webhooks/eventgrid?functionName=EventGridTrigger&code=', 
                             listKeys(concat('Microsoft.Web/sites', variables('functionAppName'), '/host/default/'), '2016-08-01').functionKeys.default)]",
