@@ -4,15 +4,21 @@ using Microsoft.Azure.EventGrid.Models;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
 
 namespace EventHandler.Functions
 {
-    public static class MyEventGridTrigger
+    public static class EventGridTrigger
     {
-        [FunctionName("MyEventGridTrigger")]
-        public static void Run([EventGridTrigger]EventGridEvent eventGridEvent, ILogger log)
+        [FunctionName("EventGridTrigger")]
+        public static async Task Run([EventGridTrigger]EventGridEvent eventGridEvent, ILogger log)
         {
-            log.LogInformation(eventGridEvent.Data.ToString());
+            var eventData = eventGridEvent.Data.ToString();
+            log.LogInformation($"EventGridTrigger: event data: {eventData}");
+
+            var response = await WebhookClient.PostAsync(eventData, log);
+            if (response == null)
+                log.LogInformation("EventGridTrigger: No WebhookEndpointUrl is configured");
         }
     }
 }

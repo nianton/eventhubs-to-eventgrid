@@ -1,5 +1,5 @@
 {
-    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
         "projectName": {
@@ -15,6 +15,10 @@
             "metadata": {
                 "description": "The location in which the Event Grid resources should be deployed."
             }
+        },
+        "eventGridIncluded": {
+            "type": "bool",
+            "defaultValue": false
         },
         "eventGridSubscriptionName": {
             "type": "string",
@@ -157,6 +161,7 @@
             "name": "[parameters('eventGridSubscriptionName')]",
             "type": "Microsoft.EventGrid/eventSubscriptions",
             "apiVersion": "2019-06-01",
+            "condition": "[parameters('eventGridIncluded')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Web/sites', variables('functionAppName'))]",
                 "[resourceId('Microsoft.EventHub/namespaces', variables('eventHubsNamespaceName'))]"
@@ -323,7 +328,7 @@
             }
         },
         {
-            "apiVersion": "2018-05-01-preview",
+            "apiVersion": "2015-05-01",
             "name": "[variables('applicationInsightsName')]",
             "type": "microsoft.insights/components",
             "location": "[parameters('location')]",
@@ -331,8 +336,8 @@
                 "[concat('hidden-link:', resourceGroup().id, '/providers/Microsoft.Web/sites/', variables('applicationInsightsName'))]": "Resource"
             },
             "properties": {
-                "ApplicationId": "[variables('applicationInsightsName')]",
-                "Request_Source": "IbizaWebAppExtensionCreate"
+                "Application_Type": "web",
+                "ApplicationId": "[variables('applicationInsightsName')]"
             }
         }
     ],
