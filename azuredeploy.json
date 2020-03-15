@@ -32,7 +32,7 @@
         },
         "eventGridSubscriptionUrl": {
             "type": "string",
-            "defaultValue": "https://myendpoints.accepts.eventgrid",
+            "defaultValue": "https://myendpoints.accepts.eventgrid.com",
             "metadata": {
                 "description": "The webhook URL to send the subscription events to. This URL must be valid and must be prepared to accept the Event Grid webhook URL challenge request. (RequestBin URLs are exempt from this requirement.)"
             }
@@ -52,17 +52,26 @@
             "type": "int",
             "defaultValue": 1,
             "maxValue": 20,
-            "minValue": 0
+            "minValue": 0,
+            "metadata": {
+                "description": "The number of Event Hubs throughput units to be provisioned."
+            }
         },
         "eventHubsAutoInflateEnabled": {
             "type": "bool",
-            "defaultValue": false
+            "defaultValue": false,
+            "metadata": {
+                "description": "Whether the Event Hubs can autoinflate its units to meet demands. Can be enabled only for Event Hubs of 'Standard' tier or better."
+            }
         },
         "eventHubsMaxThroughputUnits": {
             "type": "int",
             "defaultValue": 3,
             "maxValue": 20,
-            "minValue": 0
+            "minValue": 0,
+            "metadata": {
+                "description": "The max number of Event Hubs units to be provisioned while autoinflating."
+            }
         },
         "eventHubsIsCaptureEnabled": {
             "type": "bool",
@@ -85,7 +94,7 @@
         "eventHubsAuditName": "auditevents",
         "eventHubsIsBasic": "[equals(parameters('eventHubsSku'), 'Basic')]",
         "eventHubsAutoInflateEnabled": "[if(variables('eventHubsIsBasic'), bool('false'), bool(parameters('eventHubsAutoInflateEnabled')))]",
-        "eventHubsMaxThroughputUnits": "[if(variables('eventHubsIsBasic'), 0, int(parameters('eventHubsMaxThroughputUnits')))]",
+        "eventHubsMaxThroughputUnits": "[if(variables('eventHubsAutoInflateEnabled'), int(parameters('eventHubsMaxThroughputUnits')), 0)]",
         "eventHubsRetentionDays": "[if(variables('eventHubsIsBasic'), 1, 7)]",
         "eventHubsAuthRuleName": "DiagnosticsAuditAuthRule",
         "eventHubsAuthRuleResourceId": "[resourceId('Microsoft.EventHub/namespaces/authorizationRules', variables('eventHubsNamespaceName'), variables('eventHubsAuthRuleName'))]",
@@ -153,6 +162,7 @@
                     ],
                     "properties": {
                         "rights": [
+                            "Manage",
                             "Listen",
                             "Send"
                         ]
